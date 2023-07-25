@@ -1534,17 +1534,17 @@ class AvbHashtreeDescriptor(AvbDescriptor):
     hash_tree_ondisk = image.read(self.tree_size)
     is_zeroed = (self.tree_size == 0) or (hash_tree_ondisk[0:8] == b'ZeRoHaSH')
     if is_zeroed and accept_zeroed_hashtree:
-      print('{}: skipping verification since hashtree is zeroed and '
+      print(('{}: skipping verification since hashtree is zeroed and '
             '--accept_zeroed_hashtree was given'
-            .format(self.partition_name))
+            .format(self.partition_name)))
     else:
       if hash_tree != hash_tree_ondisk:
         sys.stderr.write('hashtree of {} contains invalid data\n'.
                          format(image_filename))
         return False
-      print('{}: Successfully verified {} hashtree of {} for image of {} bytes'
+      print(('{}: Successfully verified {} hashtree of {} for image of {} bytes'
             .format(self.partition_name, self.hash_algorithm, image.filename,
-                    self.image_size))
+                    self.image_size)))
     # TODO(zeuthen): we could also verify that the FEC stored in the image is
     # correct but this a) currently requires the 'fec' binary; and b) takes a
     # long time; and c) is not strictly needed for verification purposes as
@@ -1691,9 +1691,9 @@ class AvbHashDescriptor(AvbDescriptor):
       sys.stderr.write('{} digest of {} does not match digest in descriptor\n'.
                        format(self.hash_algorithm, image_filename))
       return False
-    print('{}: Successfully verified {} hash of {} for image of {} bytes'
+    print(('{}: Successfully verified {} hash of {} for image of {} bytes'
           .format(self.partition_name, self.hash_algorithm, image.filename,
-                  self.image_size))
+                  self.image_size)))
     return True
 
 
@@ -1920,8 +1920,8 @@ class AvbChainPartitionDescriptor(AvbDescriptor):
                        format(self.partition_name))
       return False
 
-    print('{}: Successfully verified chain partition descriptor matches '
-          'expected data'.format(self.partition_name))
+    print(('{}: Successfully verified chain partition descriptor matches '
+          'expected data'.format(self.partition_name)))
 
     return True
 
@@ -2524,12 +2524,12 @@ class Avb(object):
 
     key_blob = None
     if key_path:
-      print('Verifying image {} using key at {}'.format(image_filename,
-                                                        key_path))
+      print(('Verifying image {} using key at {}'.format(image_filename,
+                                                        key_path)))
       key_blob = RSAPublicKey(key_path).encode()
     else:
-      print('Verifying image {} using embedded public key'.format(
-          image_filename))
+      print(('Verifying image {} using embedded public key'.format(
+          image_filename)))
 
     image = ImageHandler(image_filename, read_only=True)
     (footer, header, descriptors, _) = self._parse_image(image)
@@ -2558,11 +2558,11 @@ class Avb(object):
         raise AvbError('Embedded public key does not match given key.')
 
     if footer:
-      print('vbmeta: Successfully verified footer and {} vbmeta struct in {}'
-            .format(alg_name, image.filename))
+      print(('vbmeta: Successfully verified footer and {} vbmeta struct in {}'
+            .format(alg_name, image.filename)))
     else:
-      print('vbmeta: Successfully verified {} vbmeta struct in {}'
-            .format(alg_name, image.filename))
+      print(('vbmeta: Successfully verified {} vbmeta struct in {}'
+            .format(alg_name, image.filename)))
 
     for desc in descriptors:
       if (isinstance(desc, AvbChainPartitionDescriptor)
@@ -2571,10 +2571,10 @@ class Avb(object):
         # In this case we're processing a chain descriptor but don't have a
         # --expect_chain_partition ... however --follow_chain_partitions was
         # specified so we shouldn't error out in desc.verify().
-        print('{}: Chained but ROLLBACK_SLOT (which is {}) '
+        print(('{}: Chained but ROLLBACK_SLOT (which is {}) '
               'and KEY (which has sha1 {}) not specified'
               .format(desc.partition_name, desc.rollback_index_location,
-                      hashlib.sha1(desc.public_key).hexdigest()))
+                      hashlib.sha1(desc.public_key).hexdigest())))
       elif not desc.verify(image_dir, image_ext, expected_chain_partitions_map,
                            image, accept_zeroed_hashtree):
         raise AvbError('Error verifying descriptor.')
@@ -2956,7 +2956,7 @@ class Avb(object):
             image_header.required_libavb_version_minor)
 
     if print_required_libavb_version:
-      print('1.{}'.format(tmp_header.required_libavb_version_minor))
+      print(('1.{}'.format(tmp_header.required_libavb_version_minor)))
       return
 
     if not output:
@@ -3398,7 +3398,7 @@ class Avb(object):
 
     # If we're asked to calculate minimum required libavb version, we're done.
     if print_required_libavb_version:
-      print('1.{}'.format(required_libavb_version_minor))
+      print(('1.{}'.format(required_libavb_version_minor)))
       return
 
     # First, calculate the maximum image size such that an image
@@ -3412,7 +3412,7 @@ class Avb(object):
 
     # If we're asked to only calculate the maximum image size, we're done.
     if calc_max_image_size:
-      print('{}'.format(partition_size - max_metadata_size))
+      print(('{}'.format(partition_size - max_metadata_size)))
       return
 
     image = ImageHandler(image_filename)
@@ -3619,7 +3619,7 @@ class Avb(object):
 
     # If we're asked to calculate minimum required libavb version, we're done.
     if print_required_libavb_version:
-      print('1.{}'.format(required_libavb_version_minor))
+      print(('1.{}'.format(required_libavb_version_minor)))
       return
 
     digest_size = len(create_avb_hashtree_hasher(hash_algorithm, b'')
@@ -3647,7 +3647,7 @@ class Avb(object):
 
     # If we're asked to only calculate the maximum image size, we're done.
     if calc_max_image_size:
-      print('{}'.format(max_image_size))
+      print(('{}'.format(max_image_size)))
       return
 
     image = ImageHandler(image_filename)
@@ -4739,7 +4739,7 @@ class AvbTool(object):
 
   def version(self, _):
     """Implements the 'version' sub-command."""
-    print(get_release_string())
+    print((get_release_string()))
 
   def generate_test_image(self, args):
     """Implements the 'generate_test_image' sub-command."""

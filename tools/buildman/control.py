@@ -58,28 +58,28 @@ def ShowActions(series, why_selected, boards_selected, builder, options):
         options: Command line options object
     """
     col = terminal.Color()
-    print 'Dry run, so not doing much. But I would do this:'
-    print
+    print('Dry run, so not doing much. But I would do this:')
+    print()
     if series:
         commits = series.commits
     else:
         commits = None
-    print GetActionSummary(False, commits, boards_selected,
-            options)
-    print 'Build directory: %s' % builder.base_dir
+    print(GetActionSummary(False, commits, boards_selected,
+            options))
+    print('Build directory: %s' % builder.base_dir)
     if commits:
         for upto in range(0, len(series.commits), options.step):
             commit = series.commits[upto]
-            print '   ', col.Color(col.YELLOW, commit.hash[:8], bright=False),
-            print commit.subject
-    print
+            print('   ', col.Color(col.YELLOW, commit.hash[:8], bright=False), end=' ')
+            print(commit.subject)
+    print()
     for arg in why_selected:
         if arg != 'all':
-            print arg, ': %d boards' % len(why_selected[arg])
+            print(arg, ': %d boards' % len(why_selected[arg]))
             if options.verbose:
-                print '   %s' % ' '.join(why_selected[arg])
-    print ('Total boards to build for each commit: %d\n' %
-            len(why_selected['all']))
+                print('   %s' % ' '.join(why_selected[arg]))
+    print(('Total boards to build for each commit: %d\n' %
+            len(why_selected['all'])))
 
 def DoBuildman(options, args, toolchains=None, make_func=None, boards=None,
                clean_dir=False):
@@ -120,17 +120,17 @@ def DoBuildman(options, args, toolchains=None, make_func=None, boards=None,
     if options.fetch_arch:
         if options.fetch_arch == 'list':
             sorted_list = toolchains.ListArchs()
-            print col.Color(col.BLUE, 'Available architectures: %s\n' %
-                            ' '.join(sorted_list))
+            print(col.Color(col.BLUE, 'Available architectures: %s\n' %
+                            ' '.join(sorted_list)))
             return 0
         else:
             fetch_arch = options.fetch_arch
             if fetch_arch == 'all':
                 fetch_arch = ','.join(toolchains.ListArchs())
-                print col.Color(col.CYAN, '\nDownloading toolchains: %s' %
-                                fetch_arch)
+                print(col.Color(col.CYAN, '\nDownloading toolchains: %s' %
+                                fetch_arch))
             for arch in fetch_arch.split(','):
-                print
+                print()
                 ret = toolchains.FetchAndInstall(arch)
                 if ret:
                     return ret
@@ -141,7 +141,7 @@ def DoBuildman(options, args, toolchains=None, make_func=None, boards=None,
         toolchains.Scan(options.list_tool_chains)
     if options.list_tool_chains:
         toolchains.List()
-        print
+        print()
         return 0
 
     # Work out how many commits to build. We want to build everything on the
@@ -165,7 +165,7 @@ def DoBuildman(options, args, toolchains=None, make_func=None, boards=None,
                 sys.exit(col.Color(col.RED, "Range '%s' has no commits" %
                                    options.branch))
             if msg:
-                print col.Color(col.YELLOW, msg)
+                print(col.Color(col.YELLOW, msg))
             count += 1   # Build upstream commit also
 
     if not count:

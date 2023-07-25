@@ -98,7 +98,7 @@ def Binman(options, args):
                 raise ValueError("Device tree '%s' does not have a 'binman' "
                                  "node" % dtb_fname)
             images = _ReadImageDesc(node)
-            for image in images.values():
+            for image in list(images.values()):
                 # Perform all steps for this image, including checking and
                 # writing it. This means that errors found with a later
                 # image will be reported after earlier images are already

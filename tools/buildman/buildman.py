@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 #
 # Copyright (c) 2012 The Chromium OS Authors.
 #
@@ -45,11 +45,11 @@ def RunTests():
         suite = unittest.TestLoader().loadTestsFromTestCase(module)
         suite.run(result)
 
-    print result
+    print(result)
     for test, err in result.errors:
-        print err
+        print(err)
     for test, err in result.failures:
-        print err
+        print(err)
 
 
 options, args = cmdline.ParseArgs()

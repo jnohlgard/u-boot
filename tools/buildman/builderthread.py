@@ -303,10 +303,10 @@ class BuilderThread(threading.Thread):
                 else:
                     fd.write('%s' % result.return_code)
             with open(os.path.join(build_dir, 'toolchain'), 'w') as fd:
-                print >>fd, 'gcc', result.toolchain.gcc
-                print >>fd, 'path', result.toolchain.path
-                print >>fd, 'cross', result.toolchain.cross
-                print >>fd, 'arch', result.toolchain.arch
+                print('gcc', result.toolchain.gcc, file=fd)
+                print('path', result.toolchain.path, file=fd)
+                print('cross', result.toolchain.cross, file=fd)
+                print('arch', result.toolchain.arch, file=fd)
                 fd.write('%s' % result.return_code)
 
             # Write out the image and function size information and an objdump
@@ -321,7 +321,7 @@ class BuilderThread(threading.Thread):
                     nm = self.builder.GetFuncSizesFile(result.commit_upto,
                                     result.brd.target, fname)
                     with open(nm, 'w') as fd:
-                        print >>fd, nm_result.stdout,
+                        print(nm_result.stdout, end=' ', file=fd)
 
                 cmd = ['%sobjdump' % self.toolchain.cross, '-h', fname]
                 dump_result = command.RunPipe([cmd], capture=True,
@@ -332,7 +332,7 @@ class BuilderThread(threading.Thread):
                     objdump = self.builder.GetObjdumpFile(result.commit_upto,
                                     result.brd.target, fname)
                     with open(objdump, 'w') as fd:
-                        print >>fd, dump_result.stdout,
+                        print(dump_result.stdout, end=' ', file=fd)
                     for line in dump_result.stdout.splitlines():
                         fields = line.split()
                         if len(fields) > 5 and fields[1] == '.rodata':
@@ -354,7 +354,7 @@ class BuilderThread(threading.Thread):
                 sizes = self.builder.GetSizesFile(result.commit_upto,
                                 result.brd.target)
                 with open(sizes, 'w') as fd:
-                    print >>fd, '\n'.join(lines)
+                    print('\n'.join(lines), file=fd)
 
         # Write out the configuration files, with a special case for SPL
         for dirname in ['', 'spl', 'tpl']:

@@ -87,7 +87,7 @@ class Image:
     def CheckSize(self):
         """Check that the image contents does not exceed its size, etc."""
         contents_size = 0
-        for entry in self._entries.values():
+        for entry in list(self._entries.values()):
             contents_size = max(contents_size, entry.pos + entry.size)
 
         contents_size -= self._skip_at_start
@@ -128,7 +128,7 @@ class Image:
         Returns:
             entry matching that type, or None if not found
         """
-        for entry in self._entries.values():
+        for entry in list(self._entries.values()):
             if entry.etype == etype:
                 return entry
         return None
@@ -142,7 +142,7 @@ class Image:
 
         After 3 rounds we give up since it's likely an error.
         """
-        todo = self._entries.values()
+        todo = list(self._entries.values())
         for passnum in range(3):
             next_todo = []
             for entry in todo:
@@ -171,20 +171,20 @@ class Image:
         This calls each entry's GetPositions() method. If it returns a list
         of entries to update, it updates them.
         """
-        for entry in self._entries.values():
+        for entry in list(self._entries.values()):
             pos_dict = entry.GetPositions()
-            for name, info in pos_dict.iteritems():
+            for name, info in pos_dict.items():
                 self._SetEntryPosSize(name, *info)
 
     def PackEntries(self):
         """Pack all entries into the image"""
         pos = self._skip_at_start
-        for entry in self._entries.values():
+        for entry in list(self._entries.values()):
             pos = entry.Pack(pos)
 
     def _SortEntries(self):
         """Sort entries by position"""
-        entries = sorted(self._entries.values(), key=lambda entry: entry.pos)
+        entries = sorted(list(self._entries.values()), key=lambda entry: entry.pos)
         self._entries.clear()
         for entry in entries:
             self._entries[entry._node.name] = entry
@@ -195,7 +195,7 @@ class Image:
             self._SortEntries()
         pos = 0
         prev_name = 'None'
-        for entry in self._entries.values():
+        for entry in list(self._entries.values()):
             if (entry.pos < self._skip_at_start or
                 entry.pos >= self._skip_at_start + self._size):
                 entry.Raise("Position %#x (%d) is outside the image starting "
@@ -214,7 +214,7 @@ class Image:
 
         This is intended to adjust the contents as needed by the entry type.
         """
-        for entry in self._entries.values():
+        for entry in list(self._entries.values()):
             entry.ProcessContents()
 
     def BuildImage(self):
@@ -223,7 +223,7 @@ class Image:
         with open(fname, 'wb') as fd:
             fd.write(chr(self._pad_byte) * self._size)
 
-            for entry in self._entries.values():
+            for entry in list(self._entries.values()):
                 data = entry.GetData()
                 fd.seek(self._pad_before + entry.pos - self._skip_at_start)
                 fd.write(data)

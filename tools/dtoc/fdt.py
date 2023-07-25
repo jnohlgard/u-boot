@@ -21,7 +21,7 @@ import libfdt
 # so it is fairly efficient.
 
 # A list of types we support
-(TYPE_BYTE, TYPE_INT, TYPE_STRING, TYPE_BOOL, TYPE_INT64) = range(5)
+(TYPE_BYTE, TYPE_INT, TYPE_STRING, TYPE_BOOL, TYPE_INT64) = list(range(5))
 
 def CheckErr(errnum, msg):
     if errnum:

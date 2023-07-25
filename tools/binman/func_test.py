@@ -247,7 +247,7 @@ class TestFunctional(unittest.TestCase):
             entries: List of entries to check
         """
         pos = 0
-        for entry in entries.values():
+        for entry in list(entries.values()):
             self.assertEqual(pos, entry.pos)
             pos += entry.size
 

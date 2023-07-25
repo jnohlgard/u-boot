@@ -8,7 +8,7 @@ import os
 import shutil
 import tempfile
 
-import tout
+from . import tout
 
 outdir = None
 indirs = None

@@ -3,16 +3,16 @@
 # SPDX-License-Identifier:	GPL-2.0+
 #
 
-import command
+from . import command
 import re
 import os
-import series
+from . import series
 import subprocess
 import sys
-import terminal
+from . import terminal
 
-import checkpatch
-import settings
+from . import checkpatch
+from . import settings
 
 # True to use --no-decorate - we check this in Setup()
 use_no_decorate = True
@@ -493,7 +493,7 @@ def LookupEmail(lookup_name, alias=None, raise_on_error=True, level=0):
         if raise_on_error:
             raise OSError(msg)
         else:
-            print(col.Color(col.RED, msg))
+            print((col.Color(col.RED, msg)))
             return out_list
 
     if lookup_name:
@@ -502,7 +502,7 @@ def LookupEmail(lookup_name, alias=None, raise_on_error=True, level=0):
             if raise_on_error:
                 raise ValueError(msg)
             else:
-                print(col.Color(col.RED, msg))
+                print((col.Color(col.RED, msg)))
                 return out_list
         for item in alias[lookup_name]:
             todo = LookupEmail(item, alias, raise_on_error, level + 1)

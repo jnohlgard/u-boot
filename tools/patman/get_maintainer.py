@@ -3,8 +3,8 @@
 # SPDX-License-Identifier:	GPL-2.0+
 #
 
-import command
-import gitutil
+from . import command
+from . import gitutil
 import os
 
 def FindGetMaintainer():
