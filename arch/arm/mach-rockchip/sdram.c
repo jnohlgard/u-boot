@@ -50,6 +50,7 @@ enum tag_magic {
 	ATAG_CORE = 0x54410001,
 	ATAG_SERIAL = 0x54410050,
 	ATAG_DDR_MEM = 0x54410052,
+	ATAG_TOS_MEM = 0x54410053,
 	ATAG_MAX = 0x544100ff,
 };
 
@@ -88,6 +89,24 @@ struct tag_ddr_mem {
 	u32 hash;
 } __packed;
 
+struct reserved_mem {
+	char name[8];
+	u64 start;
+	u32 size;
+	u32 flags;
+} __packed;
+
+/*
+ * TOS_MEM tag is used to reserve TEE (BL32) memory location
+ */
+struct tag_tos_mem {
+	u32 version; // rk3568: 0x00010000 = v1.0 ??
+	struct reserved_mem tee_mem;
+	struct reserved_mem drm_mem;
+	u32 reserved[15];
+	u32 hash;
+} __packed;
+
 static u32 js_hash(const void *buf, u32 len)
 {
 	u32 i, hash = 0x47C6A7E6;
@@ -105,7 +124,8 @@ static int rockchip_dram_init_banksize(void)
 {
 	const struct tag_header *tag_h = NULL;
 	u32 *addr = (void *)ATAGS_PHYS_BASE;
-	struct tag_ddr_mem *ddr_info;
+	struct tag_ddr_mem *ddr_info = NULL;
+	struct tag_tos_mem *tos_info = NULL;
 	u32 calc_hash;
 	u8 i, j;
 
@@ -121,12 +141,37 @@ static int rockchip_dram_init_banksize(void)
 		tag_h = (const struct tag_header *)addr;
 
 		if (!tag_h->size) {
-			debug("End of ATAGS (0-size tag), no DDR_MEM found\n");
-			return -ENODATA;
+			debug("End of ATAGS (0-size tag)\n");
+			break;
 		}
 
-		if (tag_h->magic == ATAG_DDR_MEM)
-			break;
+		/* Data is right after the magic member of the tag_header struct */
+		if (tag_h->magic == ATAG_DDR_MEM) {
+			ddr_info = (struct tag_ddr_mem *)(&tag_h->magic + 1);
+			if (!ddr_info->hash) {
+				debug("No hash for tag (0x%08x)\n", tag_h->magic);
+			} else {
+				calc_hash = js_hash(addr, sizeof(u32) * (tag_h->size - 1));
+				if (calc_hash != ddr_info->hash) {
+					debug("Incorrect hash for tag (0x%08x), read (0x%08x) computed (0x%08x)\n",
+						  tag_h->magic, ddr_info->hash, calc_hash);
+					return -EINVAL;
+				}
+			}
+		}
+		else if (tag_h->magic == ATAG_TOS_MEM) {
+			tos_info = (struct tag_tos_mem *)(&tag_h->magic + 1);
+			if (!tos_info->hash) {
+				debug("No hash for tag (0x%08x)\n", tag_h->magic);
+			} else {
+				calc_hash = js_hash(addr, sizeof(u32) * (tag_h->size - 1));
+				if (calc_hash != tos_info->hash) {
+					debug("Incorrect hash for tag (0x%08x), read (0x%08x) computed (0x%08x)\n",
+						  tag_h->magic, tos_info->hash, calc_hash);
+					tos_info = NULL;
+				}
+			}
+		}
 
 		switch (tag_h->magic) {
 		case ATAG_NONE:
@@ -141,30 +186,15 @@ static int rockchip_dram_init_banksize(void)
 		}
 	}
 
-	if (addr >= (u32 *)ATAGS_PHYS_END ||
-	    (tag_h && (addr + tag_h->size > (u32 *)ATAGS_PHYS_END))) {
+	if (!ddr_info) {
 		debug("End of ATAGS, no DDR_MEM found\n");
 		return -ENODATA;
 	}
 
-	/* Data is right after the magic member of the tag_header struct */
-	ddr_info = (struct tag_ddr_mem *)(&tag_h->magic + 1);
 	if (!ddr_info->count || ddr_info->count > CONFIG_NR_DRAM_BANKS) {
 		debug("Too many ATAG banks, got (%d) but max allowed (%d)\n",
 		      ddr_info->count, CONFIG_NR_DRAM_BANKS);
 		return -ENOMEM;
-	}
-
-	if (!ddr_info->hash) {
-		debug("No hash for tag (0x%08x)\n", tag_h->magic);
-	} else {
-		calc_hash = js_hash(addr, sizeof(u32) * (tag_h->size - 1));
-
-		if (calc_hash != ddr_info->hash) {
-			debug("Incorrect hash for tag (0x%08x), got (0x%08x) expected (0x%08x)\n",
-			      tag_h->magic, ddr_info->hash, calc_hash);
-			return -EINVAL;
-		}
 	}
 
 	/*
@@ -184,6 +214,38 @@ static int rockchip_dram_init_banksize(void)
 		if (start_addr < SZ_2M) {
 			size -= SZ_2M - start_addr;
 			start_addr = SZ_2M;
+		}
+
+		if (tos_info && tos_info->tee_mem.flags == 1) {
+			end_addr = start_addr + size;
+			phys_addr_t tee_start = tos_info->tee_mem.start;
+			phys_addr_t tee_end = tee_start + tos_info->tee_mem.size;
+			if (start_addr < tee_end &&
+				end_addr > tee_start) {
+				if (end_addr > tee_end) {
+					if (start_addr < tee_start) {
+						/* Break into two regions */
+						gd->bd->bi_dram[j].start = start_addr;
+						gd->bd->bi_dram[j].size = tee_start - start_addr;
+						j++;
+					}
+					size -= tee_end - start_addr;
+					start_addr = tee_end;
+				}
+				else if (start_addr < tee_start) {
+					size = tee_start - start_addr;
+				}
+				else {
+					/*
+					 * This is a corner case, [start_addr, end_addr] is
+					 * completely inside the TEE memory region, continue with
+					 * the next bank without adding this one.
+					 */
+					debug("TEE reserved region (0x%llx-0x%llx) swallows dram bank (0x%llx-0x%llx)\n",
+							tee_start, tee_end, start_addr, end_addr);
+					continue;
+				}
+			}
 		}
 
 		/*
